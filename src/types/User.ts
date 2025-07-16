@@ -3,6 +3,10 @@ type Address = {
   suite: string;
   city: string;
   zipcode: string;
+  geo:{
+    lat:string
+    lng:string
+  }
 }
 
 export type User = {
@@ -10,5 +14,12 @@ export type User = {
   name: string;
   username: string;
   email: string;
-  address: Address
+  address: Address,
+  phone:string
+  website:string
+  company:{
+    name:string
+    catchPhrase:string
+    bs:string
+  }
 }

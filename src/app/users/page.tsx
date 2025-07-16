@@ -2,14 +2,9 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import {
-  MailCheckIcon,
-  MapPin,
-  SearchCheckIcon,
-  User2Icon,
-} from "lucide-react";
+import { MailCheckIcon, MapPin, PlusCircle, User2Icon } from "lucide-react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@/types/User";
 import { Loading } from "@/components/loading";
 import { Error } from "@/components/error";
@@ -27,6 +22,7 @@ import { userCreateSchema, UserCreateSchema } from "@/schemas/userCreateSchema";
 export default function Users() {
   const [userInput, setUserInput] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
   const {
     register,
     handleSubmit,
@@ -61,15 +57,37 @@ export default function Users() {
   };
 
   function onCreateUser(data: UserCreateSchema) {
-    
+    queryClient.setQueryData(["users"], (oldData: User[] | null) => {
+      const newUser: User = {
+        id: Number(Date.now()),
+        name: data.name,
+        username: "",
+        email: data.email,
+        address: {
+          city: data.city,
+          street: "",
+          suite: "",
+          zipcode: "",
+          geo: { lat: "", lng: "" },
+        },
+        phone: "",
+        website: "",
+        company: { name: "", catchPhrase: "", bs: "" },
+      };
+      if (!oldData) {
+        return [newUser];
+      }
+      return [newUser, ...oldData];
+    });
+    setIsDialogOpen(false);
   }
 
   if (users.isError) return <Error />;
 
   return (
-    <div className="h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+    <div className="h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center overflow-hidden">
       <div className="max-w-7xl flex flex-col items-center justify-center  p-10 sm:min-w-[800px] px-10">
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full flex flex-col gap-4 p-30">
           <header className="text-center">
             <h1 className="text-4xl text-white font-semibold">Usuários</h1>
             <p className="text-xl text-white font-light">
@@ -88,6 +106,7 @@ export default function Users() {
                 value={userInput}
                 onChange={({ target }) => setUserInput(target.value)}
               />
+
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTitle>
                   <DialogTrigger asChild>
@@ -95,7 +114,8 @@ export default function Users() {
                       className="cursor-pointer flex items-center p-6"
                       onClick={() => setIsDialogOpen(true)}
                     >
-                      Criar usuário <SearchCheckIcon className="ml-2" />
+                      Criar usuário
+                      <PlusCircle />
                     </Button>
                   </DialogTrigger>
                 </DialogTitle>
@@ -158,7 +178,7 @@ export default function Users() {
               </Dialog>
             </form>
           </section>
-          <section className="bg-white/55 p-10 rounded-xl overflow-y-scroll max-h-[700px]">
+          <section className="bg-white/50 p-10 rounded-xl overflow-y-scroll max-h-[600px]">
             {users.isPending ? (
               <Loading />
             ) : (
