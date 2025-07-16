@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import {
-  CircleUser,
   MailCheckIcon,
   MapPin,
   SearchCheckIcon,
@@ -14,7 +13,25 @@ import { useQuery } from "@tanstack/react-query";
 import { User } from "@/types/User";
 import { Loading } from "@/components/loading";
 import { Error } from "@/components/error";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { userCreateSchema, UserCreateSchema } from "@/schemas/userCreateSchema";
 export default function Users() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<UserCreateSchema>({
+    resolver: zodResolver(userCreateSchema),
+  });
+
   const [user, setUser] = useState("");
   console.log(user);
 
@@ -22,7 +39,7 @@ export default function Users() {
     const response = await fetch(url);
 
     if (!response.ok) {
-      return <Error/>
+      return <Error />;
     }
 
     return await response.json();
@@ -31,6 +48,10 @@ export default function Users() {
     queryKey: ["users"],
     queryFn: () => fetcher("https://jsonplaceholder.typicode.com/users"),
   });
+
+  function onCreateUser(data: UserCreateSchema) {
+    console.log(data);
+  }
 
   if (users.isError) return <Error />;
 
@@ -56,9 +77,61 @@ export default function Users() {
                 value={user}
                 onChange={({ target }) => setUser(target.value)}
               />
-              <Button className="cursor-pointer flex items-center p-6">
-                Criar usuário <SearchCheckIcon />
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="cursor-pointer flex items-center p-6">
+                    Criar usuário <SearchCheckIcon className="ml-2" />
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent className="md:min-w-[525px]">
+                  <DialogHeader className="text-2xl font-semibold flex flex-row items-center gap-2">
+                    <User2Icon />
+                    <span>Novo usuário</span>
+                  </DialogHeader>
+                  <form
+                    className="space-y-6"
+                    onSubmit={handleSubmit(onCreateUser)}
+                  >
+                    <Input
+                      type="text"
+                      placeholder="Nome do usuário"
+                      {...register("name")}
+                    />
+                    {errors.name?.message && (
+                      <p className="text-red-500 leading-none -mt-2 px-3">
+                        {errors.name?.message}
+                      </p>
+                    )}
+                    <Input
+                      type="email"
+                      placeholder="email@exemple.com"
+                      {...register("email")}
+                    />
+                    {errors.email?.message && (
+                      <p className="text-red-500 leading-none -mt-2 px-3">
+                        {errors.email?.message}
+                      </p>
+                    )}
+
+                    <Input
+                      type="text"
+                      placeholder="Ex:Fortaleza"
+                      {...register("city")}
+                    />
+                    {errors.city?.message && (
+                      <p className="text-red-500 leading-none -mt-2 px-3">
+                        {errors.city?.message}
+                      </p>
+                    )}
+
+                    <DialogFooter>
+                      <Button type="submit">Novo usuário</Button>
+                      <Button variant="destructive">Cancelar</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </form>
           </section>
           <section className="bg-white/55 p-10 rounded-xl overflow-y-scroll max-h-[700px]">
