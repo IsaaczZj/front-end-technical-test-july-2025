@@ -1,3 +1,5 @@
+![alt text](image.png)
+
 # User Management Dashboard
 
 Este é um projeto de um sistema de gerenciamento de usuários, permitindo listar, buscar, criar e visualizar usuários a partir de uma API externa.
