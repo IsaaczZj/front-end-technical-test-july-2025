@@ -19,21 +19,22 @@ import {
   DialogTrigger,
   DialogHeader,
   DialogFooter,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userCreateSchema, UserCreateSchema } from "@/schemas/userCreateSchema";
 export default function Users() {
+  const [userInput, setUserInput] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<UserCreateSchema>({
     resolver: zodResolver(userCreateSchema),
   });
-
-  const [user, setUser] = useState("");
-  console.log(user);
 
   async function fetcher(url: string) {
     const response = await fetch(url);
@@ -41,16 +42,26 @@ export default function Users() {
     if (!response.ok) {
       return <Error />;
     }
+    const data = await response.json();
 
-    return await response.json();
+    return await data;
   }
   const users = useQuery({
     queryKey: ["users"],
     queryFn: () => fetcher("https://jsonplaceholder.typicode.com/users"),
   });
 
+  const filterUser = () => {
+    if (users.data === null || users.data === undefined) return [];
+    if (userInput.trim().length === 0) return users.data;
+
+    return users.data.filter((user: User) => {
+      return user.name.toLowerCase().includes(userInput.toLowerCase());
+    });
+  };
+
   function onCreateUser(data: UserCreateSchema) {
-    console.log(data);
+    
   }
 
   if (users.isError) return <Error />;
@@ -74,17 +85,25 @@ export default function Users() {
                 className="text-white py-5"
                 type="text"
                 placeholder="Pesquise o nome de um usuário"
-                value={user}
-                onChange={({ target }) => setUser(target.value)}
+                value={userInput}
+                onChange={({ target }) => setUserInput(target.value)}
               />
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="cursor-pointer flex items-center p-6">
-                    Criar usuário <SearchCheckIcon className="ml-2" />
-                  </Button>
-                </DialogTrigger>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTitle>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="cursor-pointer flex items-center p-6"
+                      onClick={() => setIsDialogOpen(true)}
+                    >
+                      Criar usuário <SearchCheckIcon className="ml-2" />
+                    </Button>
+                  </DialogTrigger>
+                </DialogTitle>
 
-                <DialogContent className="md:min-w-[525px]">
+                <DialogContent
+                  className="md:min-w-[525px]"
+                  onCloseAutoFocus={() => reset()}
+                >
                   <DialogHeader className="text-2xl font-semibold flex flex-row items-center gap-2">
                     <User2Icon />
                     <span>Novo usuário</span>
@@ -127,7 +146,12 @@ export default function Users() {
 
                     <DialogFooter>
                       <Button type="submit">Novo usuário</Button>
-                      <Button variant="destructive">Cancelar</Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => setIsDialogOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
                     </DialogFooter>
                   </form>
                 </DialogContent>
@@ -138,7 +162,7 @@ export default function Users() {
             {users.isPending ? (
               <Loading />
             ) : (
-              users.data.map((user: User) => (
+              filterUser().map((user: User) => (
                 <Link
                   href=""
                   key={user.id}
